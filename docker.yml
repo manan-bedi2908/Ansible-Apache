@@ -1,0 +1,57 @@
+- hosts: 192.168.0.109
+  gather_facts: false
+  tasks:
+  - name: Creating Docker Repo
+    yum_repository:
+      name: docker
+      description: Docker Repo
+      file: /etc/yum.repos.d/docker
+      baseurl: https://download.docker.com/linux/centos/7/x86_64/stable
+      gpgcheck: no
+      enabled: true
+ 
+  - name: Docker Installation using yum
+    command: "yum install docker-ce --nobest -y"
+   
+  - name: Python Installation
+    package: 
+      name: python36
+      state: present
+
+  - name: Installing Docker-Python Library
+    pip:
+      name: docker-py
+
+  - name: Creating Directory on MN
+    file:
+      path: /root/Ansible-Docker
+      state: directory
+
+  - name: Copying Content
+    copy:
+      src: "index.html"
+      dest: "/root/Ansible-Docker"
+    ignore_errors: yes
+
+  - name: Starting Docker Service
+    service:
+      name: docker
+      state: started
+
+  - name: Pulling Webserver image
+    docker_image:
+      name: httpd
+      source: pull
+
+  - name: Creating Container
+    docker_container:
+      name: web-os
+      image: httpd
+      state: started
+      detach: true
+      interactive: true
+      ports: 
+      - "1111:80"
+      volumes:
+      - /root/Ansible-Docker/:/usr/local/apache2/htdocs/
+
